@@ -9,9 +9,15 @@ module.exports = {
         autoIncrement: true
       },
       linkedin_id: {
-        type: Sequelize.STRING(255),
-        allowNull: false,
-        unique: true
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      unique: true,
+      set(value) {
+        this.setDataValue('linkedin_id', sequelize.fn('AES_ENCRYPT', value, process.env.ENCRYPTION_KEY));
+      },
+      get() {
+        return sequelize.fn('AES_DECRYPT', this.getDataValue('linkedin_id'), process.env.ENCRYPTION_KEY);
+      }
       },
       first_name: {
         type: Sequelize.STRING(255),
@@ -36,7 +42,7 @@ module.exports = {
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP()')
       },
       updated_at: {
         type: Sequelize.DATE,

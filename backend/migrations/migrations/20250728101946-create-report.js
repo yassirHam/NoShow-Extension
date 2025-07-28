@@ -46,7 +46,7 @@ module.exports = {
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP()')
       },
       updated_at: {
         type: Sequelize.DATE,
@@ -59,6 +59,10 @@ module.exports = {
     await queryInterface.addIndex('reports', ['candidate_id']);
     await queryInterface.addIndex('reports', ['user_id']);
     await queryInterface.addIndex('reports', ['created_at']);
+    await queryInterface.addIndex('reports', ['reason', 'notes'], {
+    type: 'FULLTEXT',
+    name: 'reports_search_idx'
+    });
   },
 
   down: async (queryInterface) => {

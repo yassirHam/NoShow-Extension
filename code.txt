@@ -1,3 +1,547 @@
+The following is a digest of the repository "NoShow-Extension".
+This digest is designed to be easily parsed by Large Language Models.
+
+--- SUMMARY ---
+Repository: NoShow-Extension
+Files Analyzed: 15
+Total Text Size: 15.59 KB
+Estimated Tokens (text only): ~4,182
+
+--- DIRECTORY STRUCTURE ---
+NoShow-Extension/
+├── backend/
+│   ├── config/
+│   │   └── database.js
+│   ├── db/
+│   │   └── test.js
+│   ├── migrations/
+│   │   ├── config/
+│   │   │   └── config.json
+│   │   ├── migrations/
+│   │   │   ├── 20250728101937-create-user.js
+│   │   │   ├── 20250728101942-create-candidate.js
+│   │   │   └── 20250728101946-create-report.js
+│   │   └── models/
+│   │       ├── candidate.js
+│   │       ├── index.js
+│   │       ├── report.js
+│   │       └── user.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   └── reports.js
+│   ├── package.json
+│   └── server.js
+└── code.txt
+
+
+--- FILE CONTENTS ---
+============================================================
+FILE: backend/config/database.js
+============================================================
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'noshow_dev',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '',
+  {
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'mysql',
+    port: process.env.DB_PORT || 3306,
+    define: {
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    }
+  }
+);
+
+module.exports = sequelize;
+
+============================================================
+FILE: backend/db/test.js
+============================================================
+const db = require('./database');
+
+async function testConnection() {
+  try {
+    await db.authenticate();
+    console.log('MySQL connection successful!');
+    
+    const [results] = await db.query('SELECT NOW() AS current_time');
+    console.log('Current MySQL time:', results[0].current_time);
+  } catch (error) {
+    console.error('MySQL connection failed:', error);
+  } finally {
+    await db.close();
+  }
+}
+
+testConnection();
+
+============================================================
+FILE: backend/migrations/config/config.json
+============================================================
+{
+  "development": {
+    "username": "root",
+    "password": "",
+    "database": "NoShow",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+    "port": 3306
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "NoShow",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "mysql"
+  }
+}
+
+============================================================
+FILE: backend/migrations/migrations/20250728101937-create-user.js
+============================================================
+'use strict';
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('users', {
+      id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      linkedin_id: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+        unique: true
+      },
+      email: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+        unique: true
+      },
+      full_name: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
+      }
+    });
+  },
+
+  down: async (queryInterface) => {
+    await queryInterface.dropTable('users');
+  }
+};
+
+============================================================
+FILE: backend/migrations/migrations/20250728101942-create-candidate.js
+============================================================
+'use strict';
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('candidates', {
+      id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      linkedin_id: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+        unique: true
+      },
+      first_name: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      last_name: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      current_position: {
+        type: Sequelize.STRING(255),
+        allowNull: true
+      },
+      current_company: {
+        type: Sequelize.STRING(255),
+        allowNull: true
+      },
+      profile_url: {
+        type: Sequelize.STRING(512),
+        allowNull: false
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
+      }
+    });
+  },
+
+  down: async (queryInterface) => {
+    await queryInterface.dropTable('candidates');
+  }
+};
+
+============================================================
+FILE: backend/migrations/migrations/20250728101946-create-report.js
+============================================================
+'use strict';
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('reports', {
+      id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      candidate_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'candidates',
+          key: 'id'
+        },
+        onDelete: 'CASCADE'
+      },
+      user_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onDelete: 'CASCADE'
+      },
+      reason: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      notes: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      tags: {
+        type: Sequelize.JSON,
+        allowNull: true
+      },
+      severity: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 1
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
+      }
+    });
+
+    // Add indexes for faster queries
+    await queryInterface.addIndex('reports', ['candidate_id']);
+    await queryInterface.addIndex('reports', ['user_id']);
+    await queryInterface.addIndex('reports', ['created_at']);
+  },
+
+  down: async (queryInterface) => {
+    await queryInterface.dropTable('reports');
+  }
+};
+
+============================================================
+FILE: backend/migrations/models/candidate.js
+============================================================
+module.exports = (sequelize, DataTypes) => {
+  const Candidate = sequelize.define('Candidate', {
+    linkedin_id: DataTypes.STRING,
+    first_name: DataTypes.STRING,
+    last_name: DataTypes.STRING,
+    current_position: DataTypes.STRING,
+    current_company: DataTypes.STRING,
+    profile_url: DataTypes.STRING
+  }, {
+    tableName: 'candidates',
+    underscored: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
+
+  Candidate.associate = (models) => {
+    Candidate.hasMany(models.Report, { foreignKey: 'candidate_id' });
+  };
+
+  return Candidate;
+};
+
+============================================================
+FILE: backend/migrations/models/index.js
+============================================================
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const Sequelize = require('sequelize');
+const process = require('process');
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../config/config.json')[env];
+const db = {};
+
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(config.database, config.username, config.password, config);
+}
+
+fs
+  .readdirSync(__dirname)
+  .filter(file => {
+    return (
+      file.indexOf('.') !== 0 &&
+      file !== basename &&
+      file.slice(-3) === '.js' &&
+      file.indexOf('.test.js') === -1
+    );
+  })
+  .forEach(file => {
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
+  });
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
+
+
+============================================================
+FILE: backend/migrations/models/report.js
+============================================================
+module.exports = (sequelize, DataTypes) => {
+  const Report = sequelize.define('Report', {
+    reason: DataTypes.STRING,
+    notes: DataTypes.TEXT,
+    tags: DataTypes.JSON,
+    severity: DataTypes.INTEGER
+  }, {
+    tableName: 'reports',
+    underscored: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
+
+  Report.associate = (models) => {
+    Report.belongsTo(models.User, { foreignKey: 'user_id' });
+    Report.belongsTo(models.Candidate, { foreignKey: 'candidate_id' });
+  };
+
+  return Report;
+};
+
+============================================================
+FILE: backend/migrations/models/user.js
+============================================================
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define('User', {
+    linkedin_id: DataTypes.STRING,
+    email: DataTypes.STRING,
+    full_name: DataTypes.STRING
+  }, {
+    tableName: 'users',
+    underscored: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
+
+  User.associate = (models) => {
+    User.hasMany(models.Report, { foreignKey: 'user_id' });
+  };
+
+  return User;
+};
+
+============================================================
+FILE: backend/routes/auth.js
+============================================================
+// backend/routes/auth.js
+const express = require('express');
+const router = express.Router();
+
+// Initier l'authentification LinkedIn
+router.get('/linkedin', (req, res) => {
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
+        `response_type=code&` +
+        `client_id=${process.env.LINKEDIN_CLIENT_ID}&` +
+        `redirect_uri=${process.env.LINKEDIN_REDIRECT_URI}&` +
+        `scope=r_liteprofile%20r_emailaddress`;
+    res.redirect(authUrl);
+});
+
+// Callback OAuth
+router.get('/linkedin/callback', async (req, res) => {
+    // Échange du code contre un token
+    // Récupération du profil utilisateur
+    // Création/mise à jour de l'utilisateur en base
+    // Génération JWT token
+    // Redirection vers frontend
+});
+
+module.exports = router;
+
+============================================================
+FILE: backend/routes/reports.js
+============================================================
+// backend/routes/reports.js
+const express = require('express');
+const router = express.Router();
+const db = require('../config/database');
+
+// GET /api/reports - Liste des signalements
+router.get('/', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT r.*, c.first_name, c.last_name, c.current_position, u.full_name as reporter_name
+            FROM reports r
+            JOIN candidates c ON r.candidate_id = c.id
+            JOIN users u ON r.user_id = u.id
+            ORDER BY r.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/reports - Créer un signalement
+router.post('/', async (req, res) => {
+    try {
+        const { candidate_id, user_id, reason, notes, tags, severity } = req.body;
+        const result = await db.query(`
+            INSERT INTO reports (candidate_id, user_id, reason, notes, tags, severity)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `, [candidate_id, user_id, reason, notes, JSON.stringify(tags), severity]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const Report = sequelize.define('Report', {
+    reason: DataTypes.STRING,
+    notes: DataTypes.TEXT,
+    tags: DataTypes.JSON,
+    severity: DataTypes.INTEGER
+  }, {});
+  Report.associate = function(models) {
+    Report.belongsTo(models.User, { foreignKey: 'userId' });
+    Report.belongsTo(models.Candidate, { foreignKey: 'candidateId' });
+  };
+  return Report;
+};
+
+============================================================
+FILE: backend/package.json
+============================================================
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "mysql2": "^3.14.2",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "jest": "^30.0.5",
+    "nodemon": "^3.1.10"
+  }
+}
+
+
+============================================================
+FILE: backend/server.js
+============================================================
+// backend/server.js
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Routes de base
+app.get('/', (req, res) => {
+    res.json({ message: 'NoShow API Running' });
+});
+// Routes API
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/users', require('./routes/users'));
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+============================================================
+FILE: code.txt
+============================================================
 The following is a digest of the repository "NoShow-Extension.git".
 This digest is designed to be easily parsed by Large Language Models.
 
