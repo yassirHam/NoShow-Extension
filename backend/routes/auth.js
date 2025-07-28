@@ -3,18 +3,20 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User } = require('../migrations/models');
 const { sequelize } = require('../config/database');
 
 // LinkedIn OAuth configuration
 const LINKEDIN_API = 'https://api.linkedin.com/v2';
 const OAUTH_URL = 'https://www.linkedin.com/oauth/v2';
+const LINKEDIN_REDIRECT_URI = process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:3001/api/auth/linkedin/callback';
+
 
 router.get('/linkedin', (req, res) => {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: process.env.LINKEDIN_CLIENT_ID,
-    redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
+    redirect_uri: LINKEDIN_REDIRECT_URI, // Use the variable here
     scope: 'r_liteprofile r_emailaddress',
     state: Math.random().toString(36).substring(7)
   });

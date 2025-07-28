@@ -1,7 +1,7 @@
 // backend/routes/reports.js
 const express = require('express');
 const { body, query } = require('express-validator');
-const { Report, Candidate, User } = require('../models');
+const { Report, Candidate, User } = require('../migrations/models');
 const authMiddleware = require('../middleware/authMiddleware');
 const rbacMiddleware = require('../middleware/rbacMiddleware');
 const router = express.Router();
@@ -101,6 +101,46 @@ router.get('/export', [
     res.header('Content-Type', 'text/csv');
     res.attachment('reports.csv');
     res.send(csv);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// Statistics endpoint
+router.get('/stats', [
+  authMiddleware,
+  rbacMiddleware('admin')
+], async (req, res) => {
+  try {
+    const stats = await Report.findAll({
+      attributes: [
+        'reason',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.fn('AVG', sequelize.col('severity')), 'avgSeverity']
+      ],
+      group: ['reason'],
+      include: [{
+        model: Candidate,
+        attributes: []
+      }],
+      raw: true
+    });
+
+    const timeline = await Report.findAll({
+      attributes: [
+        [sequelize.fn('DATE', sequelize.col('created_at')), 'date'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: {
+        created_at: {
+          [sequelize.Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+        }
+      },
+      group: [sequelize.fn('DATE', sequelize.col('created_at'))],
+      order: [[sequelize.fn('DATE', sequelize.col('created_at')), 'ASC']],
+      raw: true
+    });
+
+    res.json({ stats, timeline });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

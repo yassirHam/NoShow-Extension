@@ -3,11 +3,17 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { sequelize } = require('./config/database');
+const sequelize = require('./config/database');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const { securityHeaders, apiLimiter, sanitizeInput } = require('./middleware/securityMiddleware');
+
+app.use(securityHeaders);
+app.use(apiLimiter);
+app.use(sanitizeInput);
 
 // Test database connection
 sequelize.authenticate()
@@ -48,7 +54,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/reports', require('./routes/reports'));
-app.use('/api/users', require('./routes/users'));
+app.use('/api/users', require('./routes/user'));
 
 // Error handling
 app.use((err, req, res, next) => {

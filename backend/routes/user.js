@@ -1,6 +1,6 @@
 // backend/routes/users.js
 const express = require('express');
-const { User } = require('../models');
+const { User } = require('../migrations/models');
 const authMiddleware = require('../middleware/authMiddleware');
 const rbacMiddleware = require('../middleware/rbacMiddleware');
 const router = express.Router();
