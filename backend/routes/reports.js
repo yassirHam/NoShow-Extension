@@ -35,4 +35,17 @@ router.post('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const Report = sequelize.define('Report', {
+    reason: DataTypes.STRING,
+    notes: DataTypes.TEXT,
+    tags: DataTypes.JSON,
+    severity: DataTypes.INTEGER
+  }, {});
+  Report.associate = function(models) {
+    Report.belongsTo(models.User, { foreignKey: 'userId' });
+    Report.belongsTo(models.Candidate, { foreignKey: 'candidateId' });
+  };
+  return Report;
+};

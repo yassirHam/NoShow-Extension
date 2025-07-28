@@ -15,7 +15,6 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.json({ message: 'NoShow API Running' });
 });
-
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/reports', require('./routes/reports'));
